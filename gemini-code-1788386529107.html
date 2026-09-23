@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تقييم د/ وجدان الحضراني</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; direction: rtl; }
+    .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; color: #34495e; }
+    input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+    button { width: 100%; padding: 12px; background: #27ae60; color: #fff; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; transition: 0.3s; }
+    button:hover { background: #219150; }
+    .reviews-list { margin-top: 30px; }
+    .review-card { background: #fafafa; border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
+    .review-header { display: flex; justify-content: space-between; font-weight: bold; color: #2c3e50; }
+    .stars { color: #f39c12; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>تقييم د/ وجدان الحضراني</h2>
+  
+  <!-- نموذج إضافة تقييم -->
+  <form id="reviewForm">
+    <div class="form-group">
+      <label>الاسم (اختياري):</label>
+      <input type="text" id="username" placeholder="مجهول">
+    </div>
+    <div class="form-group">
+      <label>التقييم:</label>
+      <select id="rating" required>
+        <option value="5">⭐⭐⭐⭐⭐ (ممتاز)</option>
+        <option value="4">⭐⭐⭐⭐ (جيد جداً)</option>
+        <option value="3">⭐⭐⭐ (جيد)</option>
+        <option value="2">⭐⭐ (مقبول)</option>
+        <option value="1">⭐ (ضعيف)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>التعليق:</label>
+      <textarea id="comment" rows="4" placeholder="اكتب تجربتك هنا..." required></textarea>
+    </div>
+    <button type="submit">إرسال التقييم</button>
+  </form>
+
+  <!-- عرض التقييمات -->
+  <div class="reviews-list">
+    <h3>التقييمات والآراء</h3>
+    <div id="reviewsContainer">جاري تحميل التقييمات...</div>
+  </div>
+</div>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<script>
+  // استبدل بيانات الإعداد هنا ببيانات مشروعك من Firebase
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  const form = document.getElementById('reviewForm');
+  const container = document.getElementById('reviewsContainer');
+
+  // جلب وعرض التقييمات
+  function loadReviews() {
+    db.collection("reviews").orderBy("timestamp", "desc").onSnapshot((snapshot) => {
+      container.innerHTML = "";
+      if(snapshot.empty) {
+        container.innerHTML = "<p>لا توجد تقييمات حتى الآن.</p>";
+        return;
+      }
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        const stars = "⭐".repeat(data.rating);
+        container.innerHTML += `
+          <div class="review-card">
+            <div class="review-header">
+              <span>${data.name || 'مجهول'}</span>
+              <span class="stars">${stars}</span>
+            </div>
+            <p style="margin: 8px 0 0 0; color: #555;">${data.comment}</p>
+          </div>
+        `;
+      });
+    });
+  }
+
+  // إضافة تقييم جديد
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = document.getElementById('username').value.trim() || 'مجهول';
+    const rating = parseInt(document.getElementById('rating').value);
+    const comment = document.getElementById('comment').value.trim();
+
+    db.collection("reviews").add({
+      name: name,
+      rating: rating,
+      comment: comment,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => {
+      form.reset();
+    }).catch(err => alert("حدث خطأ أثناء الإرسال: " + err.message));
+  });
+
+  loadReviews();
+</script>
+
+</body>
+</html>
